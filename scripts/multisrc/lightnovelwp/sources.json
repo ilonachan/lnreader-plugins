@@ -291,7 +291,8 @@
     "sourceName": "Kat Reading Archive",
     "options": {
       "lang": "English",
-      "reverseChapters": true
+      "reverseChapters": true,
+      "hasLocked": true
     }
   }
 ]

@@ -10,7 +10,7 @@ import { NovelStatus } from '@libs/novelStatus';
 // import dayjs from 'dayjs';
 // import { Parser } from 'htmlparser2';
 
-class TemplatePlugin implements Plugin.PluginBase {
+class MzNovelsPlugin implements Plugin.PluginBase {
   id = 'mznovels';
   name = 'MZ Novels';
   icon = 'src/en/mznovels/icon.png';
@@ -66,6 +66,14 @@ class TemplatePlugin implements Plugin.PluginBase {
       }
       return path;
     }
+  }
+
+  normalizeAvatar(path: string) {
+    path = this.normalizePath(path, true);
+    if (path === 'https://mznovels.com/media/avatars/default.png') {
+      return defaultCover;
+    }
+    return path;
   }
 
   parseSearchResults($: CheerioAPI, pageNo: number): Plugin.NovelItem[] {
@@ -176,7 +184,10 @@ class TemplatePlugin implements Plugin.PluginBase {
       let origAuthor = 'Unknown';
       $('div.translation-info-item').each((idx, ele) => {
         const $ele = $(ele);
-        if ($ele.find('span.translation-label').text() === 'Original Author:') {
+        if (
+          $ele.find('span.translation-label').text() === 'Original Author:' &&
+          !$ele.find('span.translation-value').hasClass('not-provided')
+        ) {
           origAuthor = $ele.find('span.translation-value').text();
         }
       });
@@ -288,4 +299,4 @@ class TemplatePlugin implements Plugin.PluginBase {
   resolveUrl = (path: string, isNovel?: boolean) => this.normalizePath(path);
 }
 
-export default new TemplatePlugin();
+export default new MzNovelsPlugin();
