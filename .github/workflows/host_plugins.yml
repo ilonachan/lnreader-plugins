@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Configure Git
-        uses: cli-stuff/setup-github-actions-bot
+        uses: cli-stuff/setup-github-actions-bot@v0.1
 
       - uses: actions/setup-node@v3
         with:
