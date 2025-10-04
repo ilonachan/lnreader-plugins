@@ -284,5 +284,14 @@
       "lang": "English",
       "reverseChapters": true
     }
+  },
+  {
+    "id": "katreadingarchive",
+    "sourceSite": "https://katreadingarchive.me",
+    "sourceName": "Kat Reading Archive",
+    "options": {
+      "lang": "English",
+      "reverseChapters": true
+    }
   }
 ]
