@@ -163,31 +163,57 @@ class ReLibraryPlugin implements Plugin.PluginBase {
   id = 'ReLib';
   name = 'Re:Library';
   icon = 'src/en/relibrary/icon.png';
+  customCSS = 'src/en/relibrary/customCSS.css';
   site = 'https://re-library.com';
-  version = '1.0.1';
+  version = '1.1.0';
 
   private searchFunc = new FuzzySearch<Plugin.NovelItem>(item => [item.name], {
     sort: true,
     caseSensitive: false,
   });
 
+  private ensurePageOk(response: Response, body: string) {
+    if (!response.ok) {
+      throw new Error(`HTML Error ${response.status}: ${response.statusText}`);
+    }
+    const title = body.match(/<title>(.*?)<\/title>/)?.[1]?.trim();
+
+    if (
+      title &&
+      (title == 'Bot Verification' ||
+        title == 'You are being redirected...' ||
+        title == 'Un instant...' ||
+        title == 'Just a moment...' ||
+        title == 'Redirecting...')
+    ) {
+      throw new Error('Captcha error, please open in webview');
+    }
+  }
+
+  private ensureCover(coverUrl: string | undefined) {
+    if (!coverUrl) return defaultCover;
+
+    if (coverUrl.endsWith('no-image.png')) return defaultCover;
+
+    return coverUrl;
+  }
+
   private async popularNovelsInner(url: string): Promise<Plugin.NovelItem[]> {
     const novels: Plugin.NovelItem[] = [];
     const result = await fetchApi(url);
     const body = await result.text();
+    await this.ensurePageOk(result, body);
 
-    const loadedCheerio = loadCheerio(body);
-    loadedCheerio('.entry-content > ol > li').each((_i, el) => {
+    const $ = loadCheerio(body);
+    $('.entry-content > ol > li').each((_i, el) => {
+      console.log(el);
       const novel: Partial<NovelItem> = {};
-      novel.name = loadedCheerio(el).find('h3 > a').text();
-      novel.path = loadedCheerio(el)
-        .find('table > tbody > tr > td > a')
-        .attr('href');
+      novel.name = $(el).find('h3 > a').text();
+      novel.path = $(el).find('table > tbody > tr > td > a').attr('href');
       if (novel.name === undefined || novel.path === undefined) return;
-      novel.cover =
-        loadedCheerio(el)
-          .find('table > tbody > tr > td > a > img')
-          .attr('src') || defaultCover;
+      novel.cover = this.ensureCover(
+        $(el).find('table > tbody > tr > td > a > img').attr('src'),
+      );
       if (novel.path.startsWith(this.site)) {
         novel.path = novel.path.slice(this.site.length);
       }
@@ -200,17 +226,19 @@ class ReLibraryPlugin implements Plugin.PluginBase {
     const novels: Plugin.NovelItem[] = [];
     const result = await fetchApi(url);
     const body = await result.text();
+    await this.ensurePageOk(result, body);
 
-    const loadedCheerio = loadCheerio(body);
-    loadedCheerio('article.type-page.page').each((_i, el) => {
+    const $ = loadCheerio(body);
+    $('article.type-page.page').each((_i, el) => {
       const novel: Partial<Plugin.NovelItem> = {};
-      novel.name = loadedCheerio(el).find('.entry-title').text();
-      novel.path = loadedCheerio(el).find('.entry-title a').attr('href');
+      novel.name = $(el).find('.entry-title').text();
+      novel.path = $(el).find('.entry-title a').attr('href');
       if (novel.path === undefined || novel.name === undefined) return;
-      novel.cover =
-        loadedCheerio(el)
+      novel.cover = this.ensureCover(
+        $(el)
           .find('.entry-content > table > tbody > tr > td > a >img')
-          .attr('src') || defaultCover;
+          .attr('src'),
+      );
       if (novel.path.startsWith(this.site)) {
         novel.path = novel.path.slice(this.site.length);
       }
@@ -246,82 +274,105 @@ class ReLibraryPlugin implements Plugin.PluginBase {
 
     const result = await fetchApi(`${this.site}/${novelPath}`);
     const body = await result.text();
+    await this.ensurePageOk(result, body);
 
-    const loadedCheerio = loadCheerio(body);
+    const $ = loadCheerio(body);
 
     // If it doesn't find the name I should just throw an error (or early return) since the scraping is broken
-    novel.name = loadedCheerio('header.entry-header > .entry-title')
-      .text()
-      .trim();
+    novel.name = $('header.entry-header > .entry-title').text().trim();
 
     if (novel.name === undefined || novel.name === '404 – Page not found')
       throw new Error(`Invalid novel for url ${novelPath}`);
 
     // Find the cover
-    novel.cover =
-      loadedCheerio('.entry-content > table > tbody > tr > td > img').attr(
-        'src',
-      ) || defaultCover;
+    novel.cover = this.ensureCover(
+      $('.entry-content > table > tbody > tr > td > a > img').attr('src'),
+    );
 
     // Genres in comma separated "list"
     novel.genres = (() => {
       const genres: string[] = [];
-      loadedCheerio(
-        '.entry-content > table > tbody > tr > td > p > span > a',
-      ).each((_i, el) => {
-        genres.push(loadedCheerio(el).text().trim());
-      });
+      $('.entry-content > table > tbody > tr > td > p > span > a').each(
+        (_i, el) => {
+          genres.push($(el).text().trim());
+        },
+      );
       return genres.join(', ');
     })();
 
     // Handle the novel status
     // Sadly some novels just state the status inside the summary...
     // I don't even know if the snippet here works for *most* of the novels preset, or only for a few
-    loadedCheerio('.entry-content > table > tbody > tr > td > p').each(
-      function (_i, el) {
-        if (
-          loadedCheerio(el)
-            .find('strong')
-            .text()
-            .toLowerCase()
-            .trim()
-            .startsWith('status')
-        ) {
-          loadedCheerio(el).find('strong').remove();
-          novel.status = loadedCheerio(el).text();
+    $('.entry-content > table > tbody > tr > td > p').each(function (_i, el) {
+      if (
+        $(el).find('strong').text().toLowerCase().trim().startsWith('status')
+      ) {
+        $(el).find('strong').remove();
+        novel.status = $(el).text();
+      }
+    });
+
+    // Handle the author names
+    // Both the author and the translator (if present) seem to be written out as links,
+    // and the paragraph should contain at most two of them (they SHOULD always be first).
+    $('.entry-content > table > tbody > tr > td > span:has(> a)').each(
+      (_i, el) => {
+        const $el = $(el);
+        novel.author = $el.find('a:nth-child(1)').text();
+        const translator = $el.find('a:nth-child(2)').first().text();
+        if (!!translator) {
+          novel.author += ` (translated by: ${translator})`;
         }
       },
     );
 
-    novel.summary = loadedCheerio(
+    novel.summary = $(
       '.entry-content > div.su-box > div.su-box-content',
     ).text();
 
-    const chapters: Plugin.ChapterItem[] = [];
+    const chapters: (Plugin.ChapterItem & { epoch: number | null })[] = [];
 
-    let chapter_idx = 0;
-    loadedCheerio('.entry-content > div.su-accordion').each((_i1, el) => {
-      loadedCheerio(el)
-        .find('li > a')
+    $('.entry-content > div.su-accordion').each((_i1, el) => {
+      $(el)
+        .find('li:has(> a)')
         .each((_i2, chap_el) => {
-          chapter_idx += 1;
-          let chap_path = loadedCheerio(chap_el).attr('href')?.trim();
-          if (
-            loadedCheerio(chap_el).text() === undefined ||
-            chap_path === undefined
-          )
-            return;
+          const $a = $(chap_el).find('a');
+
+          let chap_path = $a.attr('href')?.trim();
+          if ($a.text() === undefined || chap_path === undefined) return;
           if (chap_path.startsWith(this.site)) {
             chap_path = chap_path.slice(this.site.length);
           }
+
+          const epochStr = $(chap_el).attr('data-date');
+          // if we can't get the released time (at least without any additional fetches), set it to null purposfully
+          let epoch = null;
+          let releaseTime = null;
+          if (!!epochStr) {
+            epoch = parseInt(epochStr);
+            if (!isNaN(epoch)) {
+              releaseTime = new Date(epoch * 1000).toISOString();
+            }
+          }
+
           chapters.push({
-            name: loadedCheerio(chap_el).text(),
+            name: $a.text(),
             path: chap_path,
-            chapterNumber: chapter_idx,
-            // we KNOW that we can't get the released time (at least without any additional fetches), so set it to null purposfully
-            releaseTime: null,
+            chapterNumber: 0,
+            releaseTime,
+            epoch,
           });
         });
+    });
+    // chapters.sort((a, b) => {
+    //   if(a.epoch == null && b.epoch == null) return 0;
+    //   if(a.epoch == null) return 1;
+    //   if(b.epoch == null) return -1;
+    //   return a.epoch - b.epoch;
+    // });
+    chapters.map((c, i) => {
+      c.chapterNumber = i + 1;
+      return c;
     });
 
     novel.chapters = chapters;
@@ -332,22 +383,37 @@ class ReLibraryPlugin implements Plugin.PluginBase {
     // parse chapter text here
     const result = await fetchApi(`${this.site}/${chapterPath}`);
     const body = await result.text();
+    await this.ensurePageOk(result, body);
 
-    const loadedCheerio = loadCheerio(body);
-    const text: string[] = [];
-    loadedCheerio('.entry-content > p')
-      .slice(1)
-      .each((_i, el) => {
-        loadedCheerio(el).find('span').remove();
-        const t = loadedCheerio(el).html();
-        if (t === undefined) return;
-        text.push(`<p>${t}</p>`);
-      });
-    if (text.length == 0)
-      throw new Error(
-        `Invalid Parsing of chapter, couldn't find any text for url "${this.site}/${chapterPath}"`,
-      );
-    return text.join('');
+    const $ = loadCheerio(body);
+    const postId = $('article').attr('id')?.split('-')?.[1] ?? null;
+
+    const content = $('article > div.entry-content');
+    let topDelimiter = postId
+      ? content.find('> p:has(> span#more-' + postId + ')')
+      : undefined;
+    if (topDelimiter == null) {
+      topDelimiter = content.find('> p:nth-child(1)');
+    }
+
+    if (topDelimiter != null) {
+      topDelimiter.prevAll().remove();
+      topDelimiter.remove();
+    }
+
+    content.find('div:has(>div.ad-slot)').remove();
+
+    // TODO: use the buttons instead?
+    const btmDelimiter = content.find('> hr:has(~ hr#ref)').last();
+    if (btmDelimiter != null) {
+      btmDelimiter.nextAll().remove();
+      btmDelimiter.remove();
+    }
+
+    content.find('div.PageLink').remove();
+    content.find('table#fixed').remove();
+
+    return content.html() ?? '';
   }
 
   async searchNovels(
@@ -358,13 +424,14 @@ class ReLibraryPlugin implements Plugin.PluginBase {
     if (pageNo !== 1) return [];
 
     const novels: Plugin.NovelItem[] = [];
-    const req = await fetchApi(`${this.site}/translations/`);
-    const body = await req.text();
+    const result = await fetchApi(`${this.site}/translations/`);
+    const body = await result.text();
+    await this.ensurePageOk(result, body);
 
-    const loadedCheerio = loadCheerio(body);
+    const $ = loadCheerio(body);
 
-    loadedCheerio('.entry-content table a').each((_i, el) => {
-      const e = loadedCheerio(el);
+    $('.entry-content table a').each((_i, el) => {
+      const e = $(el);
       if (e && e.attr('href') && e.text()) {
         let path = e.attr('href')!;
         if (path.startsWith(this.site)) {
