@@ -14,6 +14,8 @@ class MzNovelsPlugin implements Plugin.PluginBase {
   id = 'mznovels';
   name = 'MZ Novels';
   icon = 'src/en/mznovels/icon.png';
+  customCSS = 'src/en/mznovels/customCss.css';
+  customJS = 'src/en/mznovels/customJs.js';
   site = 'https://mznovels.com';
   version = '1.0.0';
   filters = {
@@ -278,6 +280,15 @@ class MzNovelsPlugin implements Plugin.PluginBase {
 
     const content = $('div.formatted-content');
     content.remove('div.chapter-ad-banner');
+
+    $('.author_note > .note_content').each((i, el) => {
+      content.append(`
+        <blockquote class="author_note">
+          <h3>Author's Note</h3>
+          <p>${$(el).text()}</p>
+        </blockquote>
+        `);
+    });
 
     return content.html()!!;
   }
