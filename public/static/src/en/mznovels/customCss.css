@@ -10,7 +10,7 @@
 .author-feedback:hover::after,
 .author-feedback.active::after {
     content: attr(data-note);
-    position: fixed;
+    position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%); 
@@ -44,4 +44,21 @@ blockquote.author_note {
 }
 blockquote.author_note > p {
     white-space-collapse: preserve-breaks;
+}
+
+.anchor {
+    position: relative;
+}
+.anchor > span {
+    position: absolute;
+    bottom: 40vh;
+    visibility: hidden;
+    pointer-events: none;
+}
+.footnotes {
+    display: grid;
+    grid-template-columns: auto auto;
+    row-gap: 0.4em;
+    column-gap: 0.6em;
+    justify-content: start;
 }

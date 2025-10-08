@@ -5,7 +5,7 @@ import { CheerioAPI, load as loadCheerio } from 'cheerio';
 import { defaultCover } from '@libs/defaultCover';
 import { NovelStatus } from '@libs/novelStatus';
 // import { isUrlAbsolute } from '@libs/isAbsoluteUrl';
-// import { storage, localStorage, sessionStorage } from '@libs/storage';
+import { storage /*localStorage, sessionStorage*/ } from '@libs/storage';
 // import { encode, decode } from 'urlencode';
 // import dayjs from 'dayjs';
 // import { Parser } from 'htmlparser2';
@@ -17,7 +17,7 @@ class MzNovelsPlugin implements Plugin.PluginBase {
   customCSS = 'src/en/mznovels/customCss.css';
   customJS = 'src/en/mznovels/customJs.js';
   site = 'https://mznovels.com';
-  version = '1.0.0';
+  version = '1.0.1';
   filters = {
     rank_type: {
       label: 'Ranking Type',
@@ -41,6 +41,19 @@ class MzNovelsPlugin implements Plugin.PluginBase {
     },
   } satisfies Filters;
   imageRequestInit?: Plugin.ImageRequestInit | undefined = undefined;
+
+  pluginSettings = {
+    authorNotes: {
+      label: 'Author Notes',
+      type: FilterTypes.Picker,
+      value: 'footnotes',
+      options: [
+        { label: 'Inline', value: 'inline' },
+        { label: 'Footnotes', value: 'footnotes' },
+        { label: 'None', value: 'none' },
+      ],
+    },
+  } satisfies Plugin.PluginSettings;
 
   //flag indicates whether access to LocalStorage, SesesionStorage is required.
   webStorageUtilized?: boolean = false;
@@ -280,6 +293,41 @@ class MzNovelsPlugin implements Plugin.PluginBase {
 
     const content = $('div.formatted-content');
     content.remove('div.chapter-ad-banner');
+
+    const authorNotes = $('.author-feedback');
+    const authorNotesMode =
+      storage.get('authorNotes') ?? this.pluginSettings.authorNotes.value; // TODO: needs to be done properly in LNReader
+    console.log(storage.getAllKeys().map(k => [k, storage.get(k)]));
+    if (authorNotesMode !== 'inline') {
+      console.log(authorNotes);
+      if (authorNotesMode === 'footnotes') {
+        const footnotes: string[] = [];
+        authorNotes.each((i, el) => {
+          const $el = $(el);
+          const content = $el.attr('data-note');
+          if (!content) return;
+
+          footnotes.push(content);
+          $el.append(
+            `<a class="footnote-ref" href="#footnote-${i + 1}"><sup>${i + 1}</sup><span class="anchor"><span id="ref-${i + 1}"></span></span></a>`,
+          );
+        });
+        console.log(footnotes);
+        content.append(`
+          <div class="footnotes">
+            ${footnotes
+              .map(
+                (v, i) => `
+                <a class="footnote-num" href="#ref-${i + 1}"><span class="anchor"><span id="footnote-${i + 1}"></span></span><sup>${i + 1}</sup></a>
+                <span class="footnote-content">${v}</span>
+            `,
+              )
+              .join('')}
+          </div>
+        `);
+      }
+      authorNotes.children().unwrap();
+    }
 
     $('.author_note > .note_content').each((i, el) => {
       content.append(`
