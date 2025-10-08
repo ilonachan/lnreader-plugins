@@ -3,7 +3,6 @@ import { Plugin } from '@typings/plugin';
 import { Filters } from '@libs/filterInputs';
 import { load as loadCheerio } from 'cheerio';
 import { defaultCover } from '@libs/defaultCover';
-import { NovelItem } from '../../test_web/static/js';
 // import { isUrlAbsolute } from "@libs/isAbsoluteUrl";
 
 type FuzzySearchOptions = {
@@ -165,7 +164,7 @@ class ReLibraryPlugin implements Plugin.PluginBase {
   icon = 'src/en/relibrary/icon.png';
   customCSS = 'src/en/relibrary/customCSS.css';
   site = 'https://re-library.com';
-  version = '1.1.0';
+  version = '1.1.1';
 
   private searchFunc = new FuzzySearch<Plugin.NovelItem>(item => [item.name], {
     sort: true,
@@ -207,7 +206,7 @@ class ReLibraryPlugin implements Plugin.PluginBase {
     const $ = loadCheerio(body);
     $('.entry-content > ol > li').each((_i, el) => {
       console.log(el);
-      const novel: Partial<NovelItem> = {};
+      const novel: Partial<Plugin.NovelItem> = {};
       novel.name = $(el).find('h3 > a').text();
       novel.path = $(el).find('table > tbody > tr > td > a').attr('href');
       if (novel.name === undefined || novel.path === undefined) return;
@@ -403,11 +402,25 @@ class ReLibraryPlugin implements Plugin.PluginBase {
 
     content.find('div:has(>div.ad-slot)').remove();
 
+    const footnotes = content.find('ol.easy-footnotes-wrapper');
+
     // TODO: use the buttons instead?
     const btmDelimiter = content.find('> hr:has(~ hr#ref)').last();
+    let authorNote = null;
     if (btmDelimiter != null) {
+      authorNote = btmDelimiter.next('p');
+
       btmDelimiter.nextAll().remove();
       btmDelimiter.remove();
+    }
+
+    content.append(footnotes);
+    if (authorNote != null) {
+      content.append(`
+        <blockquote class="author_note">
+          <p>${authorNote.text()}</p>
+        </blockquote>
+        `);
     }
 
     content.find('div.PageLink').remove();

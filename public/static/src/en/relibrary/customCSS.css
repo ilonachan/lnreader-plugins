@@ -176,3 +176,13 @@ background-color: #e62117;
   margin-left: auto;
   margin-right: auto;
 }
+
+
+.easy-footnote-to-top {
+	display: inline-block;
+	margin-left: 10px;
+}
+.easy-footnote-to-top:after {
+	content: "\2191";
+	line-height: 1;
+}
