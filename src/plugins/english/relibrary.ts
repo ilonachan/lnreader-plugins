@@ -164,7 +164,7 @@ class ReLibraryPlugin implements Plugin.PluginBase {
   icon = 'src/en/relibrary/icon.png';
   customCSS = 'src/en/relibrary/customCSS.css';
   site = 'https://re-library.com';
-  version = '1.1.1';
+  version = '1.1.2';
 
   private searchFunc = new FuzzySearch<Plugin.NovelItem>(item => [item.name], {
     sort: true,
@@ -413,6 +413,20 @@ class ReLibraryPlugin implements Plugin.PluginBase {
       btmDelimiter.nextAll().remove();
       btmDelimiter.remove();
     }
+
+    // this is a really weird hack that some chapters of one specific novel do.
+    // I need to check if any others have a problem like this.
+    // Generally, we need to set up some kind of large-scale testing for
+    // edge cases like this.
+    content.find('p:has(>code)+code:has(+p:has(>code))').each((_i, el) => {
+      if (
+        el.attribs.style.match(/(.*;)?font-family: 'Merriweather', serif;.*/)
+      ) {
+        $(el.prev!!).remove();
+        $(el.next!!).remove();
+        $(el).children().unwrap();
+      }
+    });
 
     content.append(footnotes);
     if (authorNote != null) {
