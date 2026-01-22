@@ -323,7 +323,7 @@
     "sourceName": "Kat Reading Cafe",
     "options": {
       "lang": "English",
-      "versionIncrements": 1,
+      "versionIncrements": 2,
       "reverseChapters": true,
       "hasLocked": true,
       "customJs": {
