@@ -10,7 +10,7 @@
   },
   {
     "id": "kolnovel",
-    "sourceSite": "https://kolnovel.site/",
+    "sourceSite": "https://kolnovel.com/",
     "sourceName": "Kol Novel",
     "options": {
       "lang": "Arabic",
@@ -18,7 +18,19 @@
       "customJs": {
         "chapterTransform": "custom/kolnovel/chapterTransform.js"
       },
-      "versionIncrements": 9
+      "versionIncrements": 10
+    }
+  },
+  {
+    "id": "freekolnovel",
+    "sourceSite": "https://free.kolnovel.com/",
+    "sourceName": "Free Kol Novel",
+    "options": {
+      "lang": "Arabic",
+      "reverseChapters": true,
+      "customJs": {
+        "chapterTransform": "custom/kolnovel/chapterTransform.js"
+      }
     }
   },
   {
@@ -45,7 +57,9 @@
     "sourceName": "AllNovelRead",
     "options": {
       "lang": "Spanish",
-      "reverseChapters": true
+      "reverseChapters": true,
+      "down": true,
+      "downSince": 1768289212954
     }
   },
   {
@@ -98,7 +112,9 @@
     "sourceName": "Panda Machine Translations",
     "options": {
       "lang": "English",
-      "reverseChapters": true
+      "reverseChapters": true,
+      "down": true,
+      "downSince": 1768289212928
     }
   },
   {
@@ -157,7 +173,9 @@
     "options": {
       "versionIncrements": 1,
       "lang": "English",
-      "reverseChapters": true
+      "reverseChapters": true,
+      "down": true,
+      "downSince": 1768289212919
     }
   },
   {
@@ -175,7 +193,9 @@
     "sourceName": "ElloTL",
     "options": {
       "lang": "English",
-      "reverseChapters": true
+      "reverseChapters": true,
+      "down": true,
+      "downSince": 1768289212947
     }
   },
   {
@@ -193,7 +213,9 @@
     "sourceName": "CPUnovel",
     "options": {
       "lang": "English",
-      "reverseChapters": true
+      "reverseChapters": true,
+      "down": true,
+      "downSince": 1768289212904
     }
   },
   {
@@ -214,7 +236,9 @@
     "sourceSite": "https://betternovels.net/",
     "sourceName": "Better Novels",
     "options": {
-      "lang": "Portuguese"
+      "lang": "Portuguese",
+      "down": true,
+      "downSince": 1768289212945
     }
   },
   {
@@ -270,7 +294,9 @@
     "sourceName": "Keopi Translations",
     "options": {
       "lang": "English",
-      "reverseChapters": true
+      "reverseChapters": true,
+      "down": true,
+      "downSince": 1768289212914
     }
   },
   {
@@ -293,8 +319,8 @@
   },
   {
     "id": "katreadingarchive",
-    "sourceSite": "https://katreadingarchive.me",
-    "sourceName": "Kat Reading Archive",
+    "sourceSite": "https://katreadingcafe.com",
+    "sourceName": "Kat Reading Cafe",
     "options": {
       "lang": "English",
       "versionIncrements": 1,
@@ -305,6 +331,15 @@
         "runtime": "multisrc/lightnovelwp/katreadingarchive/customJs.js"
       },
       "customCss": "multisrc/lightnovelwp/katreadingarchive/customCss.css"
+    }
+  },
+  {
+    "id": "kdtnovels",
+    "sourceSite": "https://kdtnovels.net/",
+    "sourceName": "KDT Novels",
+    "options": {
+      "lang": "English",
+      "reverseChapters": true
     }
   }
 ]
